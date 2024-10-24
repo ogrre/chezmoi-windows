@@ -1,0 +1,52 @@
+#!/usr/bin/env bash
+
+if ! command -v yq >/dev/null 2>&1; then
+	echo "$1 ⚠︎ yq missing"
+	exit 1
+fi
+
+NAME="$1"
+PANES="$2"
+CURRENT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+DEFAULT_CONFIG="$CURRENT_DIR/defaults.yml"
+USER_CONFIG="$HOME/.config/tmux/tmux-nerd-font-window-name.yml"
+
+get_config_value() {
+	local key=$1
+	local value
+	if test -f "$USER_CONFIG"; then
+		value="$(yq "$key" "$USER_CONFIG")"
+		if [ "$value" == "null" ]; then # get default config value
+			value="$(yq "$key" "$DEFAULT_CONFIG")"
+		fi
+	else
+		value="$(yq "$key" "$DEFAULT_CONFIG")"
+	fi
+	echo "$value"
+}
+
+ICON="$(get_config_value ".icons.\"$NAME\"")"
+
+if [ "$ICON" == "null" ]; then
+	FALLBACK_ICON="$(get_config_value '.config.fallback-icon')"
+	ICON="$FALLBACK_ICON"
+fi
+
+if [ "$PANES" -gt 1 ]; then
+	MULTI_PANE_ICON="$(get_config_value '.config.multi-pane-icon')"
+	if [ "$MULTI_PANE_ICON" != "null" ]; then
+		ICON="$MULTI_PANE_ICON $ICON"
+	fi
+fi
+
+SHOW_NAME="$(get_config_value '.config.show-name')"
+if [ "$SHOW_NAME" = true ]; then
+	ICON_POSITION="$(get_config_value '.config.icon-position')"
+	if [ "$ICON_POSITION" == "right" ]; then
+		ICON="$NAME $ICON"
+	else
+		ICON="$ICON $NAME"
+	fi
+fi
+
+echo "$ICON"

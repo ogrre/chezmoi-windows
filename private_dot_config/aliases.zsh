@@ -18,3 +18,6 @@ alias cat='batcat'
 
 # neovim alias
 alias n='nvim'
+
+# cargo
+alias ls='.cargo/bin/exa'
